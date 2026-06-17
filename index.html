@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith | Advanced Dental Care</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; background: #030303; color: #fff; font-family: 'Poppins', sans-serif; overflow-x: hidden; }
+        h1, h2, h3 { font-family: 'Oswald', sans-serif; text-transform: uppercase; }
+        
+        /* Loading Screen */
+        #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #030303; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
+        #loader h2 { color: #00f2fe; letter-spacing: 3px; font-size: 2rem; margin-bottom: 10px; }
+        .progress-bar { width: 200px; height: 2px; background: rgba(255,255,255,0.1); }
+        .progress-fill { height: 100%; background: #00f2fe; width: 0%; transition: width 0.2s; }
+        #error-msg { color: #ff4444; margin-top: 20px; font-size: 0.9rem; display: none; text-align: center; }
+
+        /* 3D Canvas Background */
+        #webgl-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
+        
+        /* UI Layers */
+        main { position: relative; z-index: 10; width: 100%; }
+        nav { position: fixed; top: 0; width: 100%; padding: 25px 5%; display: flex; justify-content: space-between; z-index: 100; mix-blend-mode: difference; }
+        .logo { font-size: 1.8rem; font-weight: 700; color: #fff; text-decoration: none; letter-spacing: 2px; }
+        .logo span { color: #00f2fe; }
+
+        .section { min-height: 100vh; display: flex; align-items: center; padding: 0 5%; position: relative; }
+        
+        /* Hero */
+        .hero { justify-content: flex-start; }
+        .hero h1 { font-size: 7vw; line-height: 1; margin-bottom: 20px; }
+        
+        /* Tech Section */
+        .tech-section { justify-content: flex-end; text-align: right; }
+        .glass-box { background: rgba(15,23,42,0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; max-width: 450px; }
+        .tech-section h2 { font-size: 3.5rem; color: #00f2fe; margin-bottom: 20px; line-height: 1.1; }
+
+        /* Services Grid */
+        .services { padding: 100px 5%; background: #050505; }
+        .sec-title { font-size: 4rem; margin-bottom: 50px; text-align: center; color: #fff; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; text-align: center; transition: 0.3s; }
+        .card:hover { transform: translateY(-10px); border-color: #00f2fe; }
+        .card h3 { font-size: 2rem; color: #00f2fe; margin-bottom: 15px; }
+        
+        /* Slider */
+        .ba-section { padding: 100px 5%; display: flex; flex-direction: column; align-items: center; background: #030303;}
+        .slider-container { position: relative; width: 100%; max-width: 800px; height: 450px; border-radius: 20px; overflow: hidden; }
+        .img-bg, .img-fg { position: absolute; width: 100%; height: 100%; object-fit: cover; }
+        .img-fg { clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); }
+        .slider-ctrl { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; z-index: 5; }
+        .slider-line { position: absolute; left: 50%; width: 4px; height: 100%; background: #00f2fe; transform: translateX(-50%); }
+
+        /* Marquee */
+        .marquee-wrapper { width: 100%; overflow: hidden; padding: 50px 0; background: rgba(255,255,255,0.02); }
+        .marquee-content { display: flex; width: max-content; animation: scrollMarquee 30s linear infinite; }
+        .review-card { background: rgba(15,23,42,0.8); padding: 30px; border-radius: 15px; margin: 0 15px; width: 350px; border: 1px solid rgba(255,255,255,0.1); }
+        .review-card h4 { color: #00f2fe; }
+        @keyframes scrollMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        footer { text-align: center; padding: 50px; border-top: 1px solid rgba(255,255,255,0.1); background: #020202; }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <h2>LOADING ASSETS</h2>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <p id="error-msg">Notice: Local file viewing detected. 3D models may be blocked by your browser until uploaded to GitHub.</p>
+    </div>
+
+    <div id="webgl-canvas"></div>
+
+    <main>
+        <nav><a href="#" class="logo">Zenith<span>.</span></a></nav>
+
+        <section class="section hero" id="hero-sec">
+            <div>
+                <h3 style="color: #00f2fe; letter-spacing: 5px; margin-bottom: 10px;">AESTHETIC PERFECTION</h3>
+                <h1>ENGINEERED<br>SMILES.</h1>
+                <p>Experience the absolute pinnacle of dental architecture.</p>
+            </div>
+        </section>
+
+        <section class="section tech-section" id="tech-sec">
+            <div class="glass-box">
+                <h2>MICROSCOPIC<br>PRECISION.</h2>
+                <p>We don't just treat the surface. We understand the complex biology of your teeth down to the nerve endings, ensuring 100% painless root canals.</p>
+            </div>
+        </section>
+
+        <section class="services">
+            <h2 class="sec-title">Our Masteries</h2>
+            <div class="grid-3">
+                <div class="card"><h3>01. Implants</h3><p>Surgically precise titanium roots fused with your jaw for a lifetime of confidence.</p></div>
+                <div class="card"><h3>02. Veneers</h3><p>Ultra-thin, custom-sculpted porcelain shells to redefine your smile's aesthetics instantly.</p></div>
+                <div class="card"><h3>03. Invisalign</h3><p>Invisible, AI-mapped orthodontic trays that straighten teeth without metal brackets.</p></div>
+            </div>
+        </section>
+
+        <section class="ba-section">
+            <h2 class="sec-title">The Transformation</h2>
+            <div class="slider-container">
+                <img src="https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&auto=format&fit=crop&q=80" class="img-bg" alt="Before">
+                <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&auto=format&fit=crop&q=80" class="img-fg" id="img-fg" alt="After">
+                <input type="range" min="0" max="100" value="50" class="slider-ctrl" id="slider-ctrl">
+                <div class="slider-line" id="slider-line"></div>
+            </div>
+        </section>
+
+        <div class="marquee-wrapper">
+            <div class="marquee-content">
+                <div class="review-card"><h4>"Life Changing"</h4><p>The implant procedure was completely painless.</p></div>
+                <div class="review-card"><h4>"Pure Luxury"</h4><p>Never thought a dental clinic could feel like a 5-star hotel.</p></div>
+                <div class="review-card"><h4>"Absolute Pros"</h4><p>The AI diagnostics showed me exactly what my teeth would look like.</p></div>
+                <div class="review-card"><h4>"Life Changing"</h4><p>The implant procedure was completely painless.</p></div>
+                <div class="review-card"><h4>"Pure Luxury"</h4><p>Never thought a dental clinic could feel like a 5-star hotel.</p></div>
+                <div class="review-card"><h4>"Absolute Pros"</h4><p>The AI diagnostics showed me exactly what my teeth would look like.</p></div>
+            </div>
+        </div>
+
+        <footer>
+            <p style="color: rgba(255,255,255,0.5); letter-spacing: 2px;">© 2026 ZENITH CLINIC. ALL RIGHTS RESERVED.</p>
+        </footer>
+    </main>
+
+    <script>
+        // Smooth Scroll
+        const lenis = new Lenis({ duration: 1.2, smooth: true });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+        gsap.registerPlugin(ScrollTrigger);
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time)=>{ lenis.raf(time * 1000) });
+        gsap.ticker.lagSmoothing(0);
+
+        // Slider Logic
+        document.getElementById('slider-ctrl').addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.getElementById('img-fg').style.clipPath = `polygon(0 0, ${val}% 0, ${val}% 100%, 0 100%)`;
+            document.getElementById('slider-line').style.left = `${val}%`;
+        });
+
+        // Check if running locally (file:// protocol)
+        if (window.location.protocol === 'file:') {
+            document.getElementById('error-msg').style.display = 'block';
+            // Force remove loader after 3 seconds so you can see the rest of the site locally even if 3D fails
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+            }, 3000);
+        }
+
+        // Three.js Setup
+        const canvas = document.getElementById('webgl-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 15;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        canvas.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 2);
+        keyLight.position.set(5, 5, 5);
+        scene.add(keyLight);
+        const fillLight = new THREE.PointLight(0x00f2fe, 3, 20);
+        fillLight.position.set(-5, 0, 5);
+        scene.add(fillLight);
+
+        // Loaders
+        const loader = new THREE.GLTFLoader();
+        let cleanTooth, anatomyTooth;
+        let loadedCount = 0;
+
+        function checkLoadComplete() {
+            loadedCount++;
+            document.getElementById('progress').style.width = (loadedCount / 2) * 100 + '%';
+            if(loadedCount === 2) {
+                setTimeout(() => {
+                    document.getElementById('loader').style.opacity = '0';
+                    setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+                    init3DAnimations();
+                }, 500);
+            }
+        }
+
+        // LOAD MODEL 1
+        loader.load('tooth_clean.glb', function(gltf) {
+            cleanTooth = gltf.scene;
+            cleanTooth.scale.set(1.5, 1.5, 1.5); 
+            cleanTooth.position.set(3, 0, 0); 
+            scene.add(cleanTooth);
+            checkLoadComplete();
+        }, undefined, function(e){ console.error("Error loading tooth_clean", e); });
+
+        // LOAD MODEL 2
+        loader.load('tooth_anatomy.glb', function(gltf) {
+            anatomyTooth = gltf.scene;
+            anatomyTooth.scale.set(1.5, 1.5, 1.5); 
+            anatomyTooth.position.set(-3, -15, 0); 
+            scene.add(anatomyTooth);
+            checkLoadComplete();
+        }, undefined, function(e){ console.error("Error loading tooth_anatomy", e); });
+
+        // Scroll Animations
+        function init3DAnimations() {
+            if(cleanTooth) {
+                gsap.to(cleanTooth.position, { y: 10, scrollTrigger: { trigger: "#hero-sec", start: "top top", end: "bottom top", scrub: 1 } });
+                gsap.to(cleanTooth.rotation, { x: Math.PI, scrollTrigger: { trigger: "#hero-sec", start: "top top", end: "bottom top", scrub: 1 } });
+            }
+            if(anatomyTooth) {
+                gsap.to(anatomyTooth.position, { y: 0, scrollTrigger: { trigger: "#tech-sec", start: "top bottom", end: "center center", scrub: 1 } });
+            }
+        }
+
+        // Render Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if(cleanTooth && window.scrollY < window.innerHeight) cleanTooth.rotation.y += 0.005;
+            if(anatomyTooth && window.scrollY > window.innerHeight * 0.5) anatomyTooth.rotation.y += 0.005;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "clinic_name": "Apex Dental Studio",
+  "tagline": "Advanced Care for Your Perfect Smile",
+  "phone": "+919876543210",
+  "whatsapp": "919876543210",
+  "email": "hello@apexdental.com",
+  "address": "123 Health Avenue, Medical District, City",
+  "timings": "Mon - Sat: 9:00 AM - 8:00 PM",
+  "stats": {
+    "patients": "5000+",
+    "experience": "15+ Years",
+    "awards": "Top Rated 2025"
+  },
+  "doctor": {
+    "name": "Dr. Sarah Jenkins, DDS",
+    "title": "Lead Dental Surgeon & Implantologist",
+    "bio": "With over 15 years of experience in advanced dentistry, Dr. Jenkins specializes in painless root canals and cosmetic smile makeovers.",
+    "image_url": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&auto=format&fit=crop&q=80"
+  },
+  "services": [
+    { "title": "Dental Implants", "desc": "Permanent, natural-looking replacements for missing teeth.", "icon": "🦷" },
+    { "title": "Teeth Whitening", "desc": "Advanced laser whitening for a brighter, confident smile.", "icon": "✨" },
+    { "title": "Root Canal", "desc": "Painless microscopic root canal treatments in a single sitting.", "icon": "🔬" },
+    { "title": "Invisalign", "desc": "Clear aligners to straighten teeth without metal braces.", "icon": "😁" }
+  ],
+  "testimonials": [
+    { "name": "Rahul Verma", "review": "Best dental clinic! The root canal was completely painless. Highly recommended." },
+    { "name": "Priya Sharma", "review": "Got my teeth whitened here. The staff is very polite and the clinic is extremely hygienic." }
+  ]
+}
