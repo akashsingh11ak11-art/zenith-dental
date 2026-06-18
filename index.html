@@ -133,9 +133,8 @@
             <p style="color: rgba(255,255,255,0.5); letter-spacing: 2px;">© 2026 ZENITH CLINIC. ALL RIGHTS RESERVED.</p>
         </footer>
     </main>
-
-    <script>
-        // Smooth Scroll
+<script>
+        // 1. LENIS SMOOTH SCROLL
         const lenis = new Lenis({ duration: 1.2, smooth: true });
         function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
         requestAnimationFrame(raf);
@@ -151,17 +150,16 @@
             document.getElementById('slider-line').style.left = `${val}%`;
         });
 
-        // Check if running locally (file:// protocol)
+        // Check Local View
         if (window.location.protocol === 'file:') {
             document.getElementById('error-msg').style.display = 'block';
-            // Force remove loader after 3 seconds so you can see the rest of the site locally even if 3D fails
             setTimeout(() => {
                 document.getElementById('loader').style.opacity = '0';
                 setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
             }, 3000);
         }
 
-        // Three.js Setup
+        // 2. THREE.JS ENGINE SETUP
         const canvas = document.getElementById('webgl-canvas');
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -170,17 +168,19 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        
+        // FIX 1: Reduced Exposure (Nuclear explosion fixed)
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 0.5; // Pehle 1.2 tha, ab kam kar diya hai
         canvas.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-        const keyLight = new THREE.DirectionalLight(0xffffff, 2);
+        // FIX 2: Soft Lighting (Aggressive lights removed)
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6)); // Soft base light
+        const keyLight = new THREE.DirectionalLight(0xffffff, 0.8); // Gentle sun
         keyLight.position.set(5, 5, 5);
         scene.add(keyLight);
-        const fillLight = new THREE.PointLight(0x00f2fe, 3, 20);
-        fillLight.position.set(-5, 0, 5);
-        scene.add(fillLight);
 
-        // Loaders
+        // 3. LOAD THE GLB MODELS
         const loader = new THREE.GLTFLoader();
         let cleanTooth, anatomyTooth;
         let loadedCount = 0;
@@ -197,49 +197,78 @@
             }
         }
 
-        // LOAD MODEL 1
+        // LOAD MODEL 1: CLEAN TOOTH
         loader.load('tooth_clean.glb', function(gltf) {
             cleanTooth = gltf.scene;
             cleanTooth.scale.set(1.5, 1.5, 1.5); 
             cleanTooth.position.set(3, 0, 0); 
+            if(window.innerWidth < 768) cleanTooth.position.set(0, -3, 0);
+            
+            // FIX 3: Turn off any Sketchfab built-in glowing materials
+            cleanTooth.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material.emissiveIntensity = 0; 
+                }
+            });
+
             scene.add(cleanTooth);
             checkLoadComplete();
         }, undefined, function(e){ console.error("Error loading tooth_clean", e); });
 
-        // LOAD MODEL 2
+        // LOAD MODEL 2: ANATOMY TOOTH
         loader.load('tooth_anatomy.glb', function(gltf) {
             anatomyTooth = gltf.scene;
             anatomyTooth.scale.set(1.5, 1.5, 1.5); 
             anatomyTooth.position.set(-3, -15, 0); 
+            
+            anatomyTooth.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material.emissiveIntensity = 0; 
+                }
+            });
+
             scene.add(anatomyTooth);
             checkLoadComplete();
         }, undefined, function(e){ console.error("Error loading tooth_anatomy", e); });
 
-        // Scroll Animations
+        // 4. GSAP SCROLL STORYTELLING
         function init3DAnimations() {
             if(cleanTooth) {
                 gsap.to(cleanTooth.position, { y: 10, scrollTrigger: { trigger: "#hero-sec", start: "top top", end: "bottom top", scrub: 1 } });
                 gsap.to(cleanTooth.rotation, { x: Math.PI, scrollTrigger: { trigger: "#hero-sec", start: "top top", end: "bottom top", scrub: 1 } });
             }
             if(anatomyTooth) {
-                gsap.to(anatomyTooth.position, { y: 0, scrollTrigger: { trigger: "#tech-sec", start: "top bottom", end: "center center", scrub: 1 } });
+                gsap.to(anatomyTooth.position, { y: 0, x: window.innerWidth < 768 ? 0 : -3, scrollTrigger: { trigger: "#tech-sec", start: "top bottom", end: "center center", scrub: 1 } });
+                gsap.fromTo(anatomyTooth.rotation, { y: -Math.PI }, { y: 0, scrollTrigger: { trigger: "#tech-sec", start: "top bottom", end: "center center", scrub: 1 } });
             }
         }
 
-        // Render Loop
-        function animate() {
-            requestAnimationFrame(animate);
-            if(cleanTooth && window.scrollY < window.innerHeight) cleanTooth.rotation.y += 0.005;
-            if(anatomyTooth && window.scrollY > window.innerHeight * 0.5) anatomyTooth.rotation.y += 0.005;
-            renderer.render(scene, camera);
-        }
-        animate();
+        // Idle Mouse Parallax
+        let mouseX = 0, mouseY = 0;
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
 
+        // Resize & Render Loop
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(cleanTooth && window.scrollY < window.innerHeight) {
+                cleanTooth.rotation.y += (mouseX * 0.5 - cleanTooth.rotation.y) * 0.05;
+                cleanTooth.rotation.x += (-mouseY * 0.5 - cleanTooth.rotation.x) * 0.05;
+            }
+            if(anatomyTooth && window.scrollY > window.innerHeight * 0.5) {
+                anatomyTooth.rotation.y += (mouseX * 0.3 - anatomyTooth.rotation.y) * 0.05;
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
     </script>
 </body>
 </html>
