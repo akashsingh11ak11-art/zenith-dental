@@ -215,11 +215,15 @@
             checkLoadComplete();
         }, undefined, function(e){ console.error("Error loading tooth_clean", e); });
 
-        // LOAD MODEL 2: ANATOMY TOOTH
+      // LOAD MODEL 2: ANATOMY TOOTH
         loader.load('tooth_anatomy.glb', function(gltf) {
             anatomyTooth = gltf.scene;
-            anatomyTooth.scale.set(1.5, 1.5, 1.5); 
-            anatomyTooth.position.set(-3, -15, 0); 
+            
+            // FIX 1: Isko bohot chota kar diya (0.2 instead of 1.5)
+            anatomyTooth.scale.set(0.2, 0.2, 0.2); 
+            
+            // FIX 2: Isko screen ke bohot zyada neeche bhej diya (-30 instead of -15)
+            anatomyTooth.position.set(-3, -30, 0); 
             
             anatomyTooth.traverse((child) => {
                 if (child.isMesh && child.material) {
@@ -230,7 +234,6 @@
             scene.add(anatomyTooth);
             checkLoadComplete();
         }, undefined, function(e){ console.error("Error loading tooth_anatomy", e); });
-
         // 4. GSAP SCROLL STORYTELLING
         function init3DAnimations() {
             if(cleanTooth) {
